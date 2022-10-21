@@ -1,6 +1,9 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
-#include <ESP8266HTTPUpdateServer.h>
+#include <ElegantOTA.h>
+
+#define ARDUINOJSON_USE_DOUBLE 0
+#include <ArduinoJson.h>
 
 const int buttonPin = 15;             // the number of the pushbutton pin
 const float calibration = 0.2794;     // rain quantity for each tick in mm
@@ -19,13 +22,21 @@ const char* ssid     = STASSID;
 const char* password = STAPSK;
 
 ESP8266WebServer httpServer(80);
-ESP8266HTTPUpdateServer httpUpdater;
 
 void handleRainQTY() {
+  /*
   String json = "{\"data\":{\"rainqty\":";
   json += String(tickCount * calibration, 4);
   json += "}}";
   httpServer.send(200, "application/json", json);
+*/
+  
+  StaticJsonDocument<64> doc;
+  String output;
+  
+  doc["data"]["rainqty"] = tickCount * calibration;
+  serializeJsonPretty(doc, output);
+  httpServer.send(200, F("application/json"), output);
   tickCount = 0;
 }
 
@@ -58,8 +69,9 @@ void setup() {
     httpServer.send(200, "text/plain", "Alive");
   });
 
-  httpUpdater.setup(&httpServer);
   httpServer.on("/rainqty", handleRainQTY);
+
+  ElegantOTA.begin(&httpServer);
   httpServer.begin();
   Serial.println("HTTP server started");
 }
