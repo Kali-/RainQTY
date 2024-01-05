@@ -26,13 +26,6 @@ const char* password = STAPSK;
 ESP8266WebServer httpServer(80);
 
 void handleRainQTY() {
-  /*
-  String json = "{\"data\":{\"rainqty\":";
-  json += String(tickCount * calibration, 4);
-  json += "}}";
-  httpServer.send(200, "application/json", json);
-*/
-  
   JsonDocument doc;
   String output;
   
