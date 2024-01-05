@@ -79,6 +79,7 @@ void setup() {
 
   httpServer.on("/uptime", uptime);
 
+  ElegantOTA.setFWVersion("1.0.0");
   ElegantOTA.begin(&httpServer);
   httpServer.begin();
   Serial.println("HTTP server started");
