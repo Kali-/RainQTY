@@ -31,7 +31,7 @@ void handleRainQTY() {
   httpServer.send(200, "application/json", json);
 */
   
-  StaticJsonDocument<64> doc;
+  JsonDocument doc;
   String output;
   
   doc["data"]["rainqty"] = tickCount * calibration;
