@@ -5,6 +5,8 @@
 #define ARDUINOJSON_USE_DOUBLE 0
 #include <ArduinoJson.h>
 
+#include "uptime_formatter.h"
+
 const int buttonPin = 15;             // the number of the pushbutton pin
 const float calibration = 0.2794;     // rain quantity for each tick in mm
 
@@ -36,8 +38,17 @@ void handleRainQTY() {
   
   doc["data"]["rainqty"] = tickCount * calibration;
   serializeJsonPretty(doc, output);
-  httpServer.send(200, F("application/json"), output);
+  httpServer.send(200, "application/json", output);
   tickCount = 0;
+}
+
+void reset() {
+  ESP.restart();
+}
+
+void uptime() {
+  Serial.println("up " + uptime_formatter::getUptime());
+  httpServer.send(200, "text/plain", uptime_formatter::getUptime());
 }
 
 void setup() {
@@ -66,10 +77,14 @@ void setup() {
   Serial.println(WiFi.localIP());
 
   httpServer.on("/", []() {
-    httpServer.send(200, "text/plain", "Alive");
+    httpServer.send(200, "text/plain", "System alive");
   });
 
   httpServer.on("/rainqty", handleRainQTY);
+
+  httpServer.on("/reboot", reset);
+
+  httpServer.on("/uptime", uptime);
 
   ElegantOTA.begin(&httpServer);
   httpServer.begin();
@@ -94,4 +109,5 @@ void loop() {
   }
 
   httpServer.handleClient();
+  ElegantOTA.loop();
 }
