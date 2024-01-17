@@ -20,10 +20,18 @@ unsigned long debounceDelay = 300;    // the debounce time; increase if the outp
 #define STAPSK  "Cristi01"
 #endif
 
+
 const char* ssid     = STASSID;
 const char* password = STAPSK;
 
 ESP8266WebServer httpServer(80);
+
+const String version = "1.0.0";
+
+void handleNotFound(){
+  httpServer.sendHeader("Location", "/",true);
+  httpServer.send(302, "text/plane","");
+}
 
 void handleRainQTY() {
   JsonDocument doc;
@@ -33,15 +41,6 @@ void handleRainQTY() {
   serializeJsonPretty(doc, output);
   httpServer.send(200, "application/json", output);
   tickCount = 0;
-}
-
-void reset() {
-  ESP.restart();
-}
-
-void uptime() {
-  Serial.println("up " + uptime_formatter::getUptime());
-  httpServer.send(200, "text/plain", uptime_formatter::getUptime());
 }
 
 void setup() {
@@ -69,17 +68,33 @@ void setup() {
   Serial.print("IP address: ");
   Serial.println(WiFi.localIP());
 
-  httpServer.on("/", []() {
-    httpServer.send(200, "text/plain", "System alive");
-  });
-
   httpServer.on("/rainqty", handleRainQTY);
 
-  httpServer.on("/reboot", reset);
+  httpServer.onNotFound(handleNotFound);
 
-  httpServer.on("/uptime", uptime);
+  httpServer.on("/", []() {
+    Serial.println("RainQTY Version " + version);
+    httpServer.send(200, "text/plain", "RainQTY Version " + version);
+  });
 
-  ElegantOTA.setFWVersion("1.0.0");
+  httpServer.on("/status", []() {
+    httpServer.send(200, "text/plain", "Alive");
+  });
+
+  httpServer.on("/reboot", []() {
+    httpServer.send(200, "text/plain", "Reboot in progress...");
+    delay(200);
+    //httpServer.sendHeader("Location", "/uptime",true);
+    //httpServer.send(302, "text/plane",""); 
+    ESP.restart();
+  });
+
+  httpServer.on("/uptime", []() {
+    Serial.println("up " + uptime_formatter::getUptime());
+    httpServer.send(200, "text/plain", "Uptime: " + uptime_formatter::getUptime());
+  });
+
+  // ElegantOTA.setFWVersion(version);  //Only for ElegantOTA Pro
   ElegantOTA.begin(&httpServer);
   httpServer.begin();
   Serial.println("HTTP server started");
